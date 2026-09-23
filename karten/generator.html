@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visitenkarten-Generator</title>
+<style>
+	:root {
+		--blau: #0025ef;
+		--rand: #d8dae0;
+		--grau: #5b6070;
+	}
+	* { box-sizing: border-box; }
+	[hidden] { display: none !important; }
+	body {
+		margin: 0;
+		background: #f4f5f8;
+		color: #16181f;
+		font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	}
+	header {
+		padding: 22px 28px;
+		background: #fff;
+		border-bottom: 1px solid var(--rand);
+	}
+	header h1 { margin: 0; font-size: 20px; }
+	header p { margin: 4px 0 0; color: var(--grau); font-size: 14px; }
+	.raster {
+		display: grid;
+		grid-template-columns: minmax(340px, 1fr) auto;
+		gap: 28px;
+		align-items: start;
+		padding: 28px;
+		max-width: 1100px;
+	}
+	@media (max-width: 900px) { .raster { grid-template-columns: 1fr; } }
+
+	fieldset {
+		margin: 0 0 20px;
+		padding: 18px 20px 20px;
+		background: #fff;
+		border: 1px solid var(--rand);
+		border-radius: 10px;
+	}
+	legend { padding: 0 6px; font-weight: 600; font-size: 14px; color: var(--grau); }
+	label { display: block; margin-bottom: 12px; font-size: 13px; color: var(--grau); }
+	label span { display: block; margin-bottom: 4px; }
+	input[type="text"], input[type="url"], input[type="email"], input[type="tel"], input[type="file"] {
+		width: 100%;
+		padding: 9px 11px;
+		border: 1px solid var(--rand);
+		border-radius: 7px;
+		font: inherit;
+		font-size: 15px;
+		background: #fff;
+	}
+	input:focus-visible { outline: 2px solid var(--blau); outline-offset: 1px; }
+	.zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+	.wahl { display: flex; gap: 10px; margin-bottom: 14px; }
+	.wahl label {
+		flex: 1;
+		margin: 0;
+		padding: 10px 12px;
+		border: 2px solid var(--rand);
+		border-radius: 8px;
+		cursor: pointer;
+		color: #16181f;
+		font-size: 14px;
+	}
+	.wahl label:has(input:checked) { border-color: var(--blau); }
+	.wahl input { margin-right: 6px; }
+	.hinweis { margin: 6px 0 0; color: var(--grau); font-size: 12.5px; }
+
+	button {
+		padding: 10px 16px;
+		border: 1px solid var(--blau);
+		border-radius: 7px;
+		background: var(--blau);
+		color: #fff;
+		font: inherit;
+		font-size: 14.5px;
+		cursor: pointer;
+	}
+	button.sekundaer { background: #fff; color: var(--blau); }
+	button:focus-visible { outline: 2px solid #16181f; outline-offset: 2px; }
+	.knoepfe { display: flex; flex-wrap: wrap; gap: 8px; }
+
+	.vorschau { position: sticky; top: 28px; display: grid; gap: 14px; justify-items: center; }
+	iframe {
+		width: 390px;
+		height: 720px;
+		border: 1px solid var(--rand);
+		border-radius: 22px;
+		background: var(--blau);
+	}
+	.qr { width: 180px; }
+	.qr svg { display: block; width: 100%; height: auto; border: 1px solid var(--rand); border-radius: 6px; }
+	code { background: #eceef3; padding: 1px 5px; border-radius: 4px; font-size: 13px; word-break: break-all; }
+</style>
+</head>
+<body>
+<header>
+	<h1>Visitenkarten-Generator</h1>
+	<p>Daten eintragen, Dateien herunterladen, Ordner in das GitHub-Repository legen. Alles passiert lokal im Browser – nichts wird hochgeladen.</p>
+</header>
+
+<div class="raster">
+	<form id="formular" autocomplete="off">
+		<fieldset>
+			<legend>Vorlage</legend>
+			<div class="wahl">
+				<label><input type="radio" name="layout" value="ohne" checked> Ohne Foto</label>
+				<label><input type="radio" name="layout" value="mit"> Mit Foto</label>
+			</div>
+			<label id="fotoFeld" hidden><span>Foto (quadratisch, mind. 600 × 600 px)</span>
+				<input type="file" id="foto" accept="image/*">
+				<p class="hinweis">Wird auf 800 × 800 px verkleinert und als <code>foto.jpg</code> mitgeliefert.</p>
+			</label>
+		</fieldset>
+
+		<fieldset>
+			<legend>Person</legend>
+			<div class="zwei">
+				<label><span>Vorname</span><input type="text" name="vorname" value="Max"></label>
+				<label><span>Nachname</span><input type="text" name="nachname" value="Mustermann"></label>
+			</div>
+			<label><span>Position</span><input type="text" name="position" value="wichtige Position"></label>
+			<div class="zwei">
+				<label><span>Telefon (Festnetz)</span><input type="tel" name="tel" value="+49 89 345 67 43"></label>
+				<label><span>Mobil</span><input type="tel" name="mobil" value="+49 176 450 105 61"></label>
+			</div>
+			<label><span>E-Mail</span><input type="email" name="email" value="m.mustermann@zero-wa.de"></label>
+			<label><span>Website</span><input type="url" name="web" value="https://www.zero-wa.design"></label>
+		</fieldset>
+
+		<fieldset>
+			<legend>Social Media (leer lassen, wenn nicht gewünscht)</legend>
+			<div class="zwei">
+				<label><span>Instagram</span><input type="url" name="instagram"></label>
+				<label><span>LinkedIn</span><input type="url" name="linkedin"></label>
+				<label><span>Pinterest</span><input type="url" name="pinterest"></label>
+				<label><span>TikTok</span><input type="url" name="tiktok"></label>
+			</div>
+		</fieldset>
+
+		<fieldset>
+			<legend>Firma und Rechtliches</legend>
+			<div class="zwei">
+				<label><span>Firmenname (groß)</span><input type="text" name="firma1" value="ZERO"></label>
+				<label><span>Zusatz</span><input type="text" name="firma2" value="Werbeagentur"></label>
+			</div>
+			<label><span>Firmenname im Kontakt</span><input type="text" name="firmaVcard" value="ZERO Werbeagentur"></label>
+			<div class="zwei">
+				<label><span>Markenfarbe</span><input type="text" name="farbe" value="#0025ef"></label>
+				<label><span>Button-Text</span><input type="text" name="buttonText" value="Kontakt speichern"></label>
+			</div>
+			<div class="zwei">
+				<label><span>Impressum (URL)</span><input type="url" name="impressum"></label>
+				<label><span>Datenschutz (URL)</span><input type="url" name="datenschutz"></label>
+			</div>
+		</fieldset>
+
+		<fieldset>
+			<legend>Adresse und QR-Code</legend>
+			<div class="zwei">
+				<label><span>Basis-Adresse</span><input type="url" name="basis" value="https://benutzername.github.io"></label>
+				<label><span>Ordnername</span><input type="text" name="ordner" value="max"></label>
+			</div>
+			<p class="hinweis">Die Karte liegt später unter <code id="endUrl"></code></p>
+		</fieldset>
+
+		<fieldset>
+			<legend>Dateien</legend>
+			<div class="knoepfe">
+				<button type="button" id="alle">Alle Dateien herunterladen</button>
+				<button type="button" class="sekundaer" id="btnHtml">index.html</button>
+				<button type="button" class="sekundaer" id="btnVcf">kontakt.vcf</button>
+				<button type="button" class="sekundaer" id="btnFoto" hidden>foto.jpg</button>
+			</div>
+			<p class="hinweis">Lege im Repository einen Ordner mit dem Ordnernamen an und schiebe die heruntergeladenen Dateien hinein.</p>
+			<div class="knoepfe" style="margin-top:14px">
+				<button type="button" class="sekundaer" id="btnQrSvg">QR-Code als SVG</button>
+				<button type="button" class="sekundaer" id="btnQrPng">QR-Code als PNG</button>
+			</div>
+		</fieldset>
+	</form>
+
+	<div class="vorschau">
+		<iframe id="rahmen" title="Vorschau der Visitenkarte"></iframe>
+		<div class="qr" id="qrBild"></div>
+	</div>
+</div>
+
+<script src="assets/vorlage.js"></script>
+<script src="assets/karte-css.js"></script>
+<script src="assets/qrcode.js"></script>
+<script>
+(function () {
+	'use strict';
+
+	var formular = document.getElementById('formular');
+	var rahmen = document.getElementById('rahmen');
+	var fotoFeld = document.getElementById('fotoFeld');
+	var fotoEingabe = document.getElementById('foto');
+	var btnFoto = document.getElementById('btnFoto');
+	var fotoGross = null; // Blob für foto.jpg
+	var fotoKlein = null; // Base64 für die vCard
+	var fotoVorschau = '';
+
+	function daten() {
+		var d = {};
+		new FormData(formular).forEach(function (wert, schluessel) { d[schluessel] = String(wert).trim(); });
+		d.fotoDatei = d.layout === 'mit' ? 'foto.jpg' : '';
+		return d;
+	}
+
+	function endUrl() {
+		var d = daten();
+		return d.basis.replace(/\/$/, '') + '/' + d.ordner.replace(/^\/|\/$/g, '') + '/';
+	}
+
+	/* ---------- Vorschau ---------- */
+	function aktualisieren() {
+		var d = daten();
+		var seite = window.ZVK.baueSeite(d, 'assets/')
+			.replace(/<link rel="preload"[^>]*>\n?/g, '')
+			.replace(/<link rel="stylesheet"[^>]*>/, '<style>' + window.ZVK_CSS + '</style>');
+		if (d.layout === 'mit') {
+			seite = fotoVorschau
+				? seite.replace('src="foto.jpg"', 'src="' + fotoVorschau + '"')
+				: seite.replace(/<img src="foto\.jpg"[^>]*>/, ''); // noch kein Foto gewählt
+		}
+		rahmen.srcdoc = seite;
+		fotoFeld.hidden = d.layout !== 'mit';
+		btnFoto.hidden = d.layout !== 'mit' || !fotoGross;
+		document.getElementById('endUrl').textContent = endUrl();
+		qrZeichnen();
+	}
+
+	/* ---------- Foto ---------- */
+	function skaliere(bild, kante, qualitaet) {
+		var leinwand = document.createElement('canvas');
+		leinwand.width = leinwand.height = kante;
+		var seite = Math.min(bild.width, bild.height);
+		var ctx = leinwand.getContext('2d');
+		ctx.drawImage(bild, (bild.width - seite) / 2, (bild.height - seite) / 2, seite, seite, 0, 0, kante, kante);
+		return new Promise(function (fertig) {
+			leinwand.toBlob(function (blob) { fertig({ blob: blob, dataUrl: leinwand.toDataURL('image/jpeg', qualitaet) }); }, 'image/jpeg', qualitaet);
+		});
+	}
+
+	fotoEingabe.addEventListener('change', function () {
+		var datei = fotoEingabe.files && fotoEingabe.files[0];
+		if (!datei) { return; }
+		var bild = new Image();
+		bild.onload = function () {
+			Promise.all([skaliere(bild, 800, 0.85), skaliere(bild, 400, 0.8)]).then(function (ergebnis) {
+				fotoGross = ergebnis[0].blob;
+				fotoVorschau = ergebnis[0].dataUrl;
+				fotoKlein = ergebnis[1].dataUrl.split(',')[1];
+				aktualisieren();
+			});
+		};
+		bild.src = URL.createObjectURL(datei);
+	});
+
+	/* ---------- Herunterladen ---------- */
+	function speichern(inhalt, dateiname, typ) {
+		var blob = inhalt instanceof Blob ? inhalt : new Blob([inhalt], { type: typ });
+		var a = document.createElement('a');
+		a.href = URL.createObjectURL(blob);
+		a.download = dateiname;
+		document.body.appendChild(a);
+		a.click();
+		setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+	}
+
+	function html() { return window.ZVK.baueSeite(daten()); }
+	function vcf() { return window.ZVK.baueVCard(daten(), daten().layout === 'mit' ? fotoKlein : null); }
+
+	document.getElementById('btnHtml').addEventListener('click', function () { speichern(html(), 'index.html', 'text/html;charset=utf-8'); });
+	document.getElementById('btnVcf').addEventListener('click', function () { speichern(vcf(), 'kontakt.vcf', 'text/vcard;charset=utf-8'); });
+	btnFoto.addEventListener('click', function () { if (fotoGross) { speichern(fotoGross, 'foto.jpg'); } });
+	document.getElementById('alle').addEventListener('click', function () {
+		speichern(html(), 'index.html', 'text/html;charset=utf-8');
+		setTimeout(function () { speichern(vcf(), 'kontakt.vcf', 'text/vcard;charset=utf-8'); }, 400);
+		if (fotoGross && daten().layout === 'mit') {
+			setTimeout(function () { speichern(fotoGross, 'foto.jpg'); }, 800);
+		}
+	});
+
+	/* ---------- QR-Code ---------- */
+	var ruhezone = 4;
+
+	function qrSvg(farbe) {
+		var qr = window.qrcode(0, 'Q');
+		qr.addData(endUrl());
+		qr.make();
+		var n = qr.getModuleCount();
+		var groesse = n + ruhezone * 2;
+		var d = '';
+		for (var r = 0; r < n; r++) {
+			var c = 0;
+			while (c < n) {
+				if (qr.isDark(r, c)) {
+					var start = c;
+					while (c < n && qr.isDark(r, c)) { c++; }
+					d += 'M' + (start + ruhezone) + ' ' + (r + ruhezone) + 'h' + (c - start) + 'v1h-' + (c - start) + 'z';
+				} else { c++; }
+			}
+		}
+		return {
+			svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + groesse + ' ' + groesse + '" shape-rendering="crispEdges">' +
+				'<rect width="100%" height="100%" fill="#ffffff"/><path fill="' + farbe + '" d="' + d + '"/></svg>',
+			qr: qr, n: n, groesse: groesse
+		};
+	}
+
+	function qrZeichnen() {
+		document.getElementById('qrBild').innerHTML = qrSvg(daten().farbe || '#0025ef').svg;
+	}
+
+	document.getElementById('btnQrSvg').addEventListener('click', function () {
+		speichern(qrSvg(daten().farbe || '#0025ef').svg, 'qr-' + daten().ordner + '.svg', 'image/svg+xml');
+	});
+
+	document.getElementById('btnQrPng').addEventListener('click', function () {
+		var ergebnis = qrSvg(daten().farbe || '#0025ef');
+		var skala = Math.ceil(1600 / ergebnis.groesse);
+		var leinwand = document.createElement('canvas');
+		leinwand.width = leinwand.height = ergebnis.groesse * skala;
+		var ctx = leinwand.getContext('2d');
+		ctx.fillStyle = '#ffffff';
+		ctx.fillRect(0, 0, leinwand.width, leinwand.height);
+		ctx.fillStyle = daten().farbe || '#0025ef';
+		for (var r = 0; r < ergebnis.n; r++) {
+			for (var c = 0; c < ergebnis.n; c++) {
+				if (ergebnis.qr.isDark(r, c)) {
+					ctx.fillRect((c + ruhezone) * skala, (r + ruhezone) * skala, skala, skala);
+				}
+			}
+		}
+		leinwand.toBlob(function (blob) { speichern(blob, 'qr-' + daten().ordner + '.png'); }, 'image/png');
+	});
+
+	formular.addEventListener('input', aktualisieren);
+	formular.addEventListener('change', aktualisieren);
+	aktualisieren();
+})();
+</script>
+</body>
+</html>
